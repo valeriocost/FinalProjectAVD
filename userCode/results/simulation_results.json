@@ -5,7 +5,7 @@
             "route_id": -1,
             "status": "Failed",
             "infractions": {
-                "collisions_layout": 3.205,
+                "collisions_layout": 0.0,
                 "collisions_pedestrian": 0.0,
                 "collisions_vehicle": 0.0,
                 "red_light": 0.0,
@@ -19,9 +19,9 @@
                 "route_timeout": 0.0
             },
             "scores_mean": {
-                "score_composed": 6.3245,
-                "score_route": 9.73,
-                "score_penalty": 0.65
+                "score_composed": 6.96,
+                "score_route": 6.96,
+                "score_penalty": 1.0
             },
             "scores_std_dev": {
                 "score_composed": "NaN",
@@ -47,11 +47,9 @@
                 "index": 0,
                 "route_id": "RouteScenario_1_rep0",
                 "status": "Failed",
-                "num_infractions": 1,
+                "num_infractions": 0,
                 "infractions": {
-                    "collisions_layout": [
-                        "Agent collided against object with type=static.prop.constructioncone and id=15064 at (x=-1376.436, y=1611.584, z=327.792)"
-                    ],
+                    "collisions_layout": [],
                     "collisions_pedestrian": [],
                     "collisions_vehicle": [],
                     "red_light": [],
@@ -65,14 +63,14 @@
                     "route_timeout": []
                 },
                 "scores": {
-                    "score_route": 9.73,
-                    "score_penalty": 0.65,
-                    "score_composed": 6.3245
+                    "score_route": 6.96,
+                    "score_penalty": 1.0,
+                    "score_composed": 6.96
                 },
                 "meta": {
                     "route_length": 3206.913,
-                    "duration_game": 50.0,
-                    "duration_system": 90.698
+                    "duration_game": 30.8,
+                    "duration_system": 54.613
                 }
             }
         ]
@@ -88,12 +86,12 @@
         "carla_speedometer"
     ],
     "values": [
-        "6.3245",
-        "9.73",
-        "0.65",
+        "6.96",
+        "6.96",
+        "1.0",
         "0.0",
         "0.0",
-        "3.205",
+        "0.0",
         "0.0",
         "0.0",
         "0",

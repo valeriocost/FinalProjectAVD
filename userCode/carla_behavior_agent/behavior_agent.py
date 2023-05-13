@@ -59,6 +59,7 @@ class BehaviorAgent(BasicAgent):
         self.try_overtake = False
         self._obstacle_to_overtake = None
         self.overtaking = False
+        self.overtake_list = []
         #self.end_overtake = False
         self.old_queue = None
         self._prev_dist_obstacle = None
@@ -173,7 +174,6 @@ class BehaviorAgent(BasicAgent):
             #     vehicle_list.pop(i)
             #     v.destroy()
         # sort by distance
-        
         print("ID + OFFSET " + str(waypoint.lane_id + lane_offset))
         vehicle_list = sorted(vehicle_list, key=dist)
         for v in vehicle_list:
@@ -279,7 +279,9 @@ class BehaviorAgent(BasicAgent):
 
         return control
 
-    def change_path(self, start_waypoint, total_distance, follow_direction=True):
+    def change_path(self, start_waypoint, total_distance, follow_direction=True, save_and_pop_queue=False):
+        if save_and_pop_queue:
+            self.old_queue = self._local_planner._waypoints_queue
         distance = 0
         plan = [(start_waypoint.get_left_lane(), RoadOption.LANEFOLLOW)]
         while distance < total_distance:
@@ -290,9 +292,12 @@ class BehaviorAgent(BasicAgent):
             if not next_wps:
                 print("Waypoint finished")
                 break
+            if save_and_pop_queue:
+                self.old_queue.popleft()
             next_wp = next_wps[0]
             distance += next_wp.transform.location.distance(plan[-1][0].transform.location)
             plan.append((next_wp, RoadOption.LANEFOLLOW))
+        
         return plan
 
 
@@ -312,7 +317,7 @@ class BehaviorAgent(BasicAgent):
         ego_vehicle_loc = self._vehicle.get_location()
         ego_vehicle_wp = self._map.get_waypoint(ego_vehicle_loc)
         #self.collision_and_car_avoid_manager(ego_vehicle_wp)
-
+        def dist(v): return v.get_location().distance(wpt.transform.location)
 
         if self.try_overtake:
             wpt = ego_vehicle_wp
@@ -323,11 +328,41 @@ class BehaviorAgent(BasicAgent):
             if not state:
                 print("change lane")
                 print(ego_vehicle_wp.lane_id)
-                self.old_queue = self._local_planner._waypoints_queue
+                
                 start_location = self._vehicle.get_location()
                 start_waypoint = self._map.get_waypoint(start_location)
-                plan = self.change_path(start_waypoint, 30, follow_direction=False)
+                
+                vehicle_list = list(self._world.get_actors().filter("*vehicle*"))
+                object_list = list(self._world.get_actors().filter("*static*"))
+                vehicle_list.extend(object_list)
+                
+                vehicle_list = [v for v in vehicle_list if dist(v) < 45 and v.id != self._vehicle.id]
+                vehicle_list = [v for v in vehicle_list if self._map.get_waypoint(v.get_location()).lane_id == wpt.lane_id]
+                
+                vehicle_list = sorted(vehicle_list, key=dist)
+                prec_location = None
+                for v in vehicle_list:
+                    if prec_location is None:
+                        prec_location= v.get_location()
+                        self.overtake_list.append(v)
+                    else:
+                        distance = v.get_location().distance(prec_location)
+                        prec_location = v.get_location()
+                        print("DISTANCE: " + str(distance))
+                        if distance < 7:
+                            self.overtake_list.append(v)
+                        else:
+                            break
+                
+                print("OVERTAKE LIST: ", end="\n")
+                for v in self.overtake_list:
+                    print(v.type_id, end=", ")
+                
+                print("DISTANCE by last object: " + str(dist(self.overtake_list[-1])))
+                
+                plan = self.change_path(start_waypoint, int(dist(self.overtake_list[-1])), follow_direction=False, save_and_pop_queue=True)
                 self._local_planner.set_global_plan(plan, clean_queue=False, create_new=True)
+                self._local_planner.set_global_plan(self.old_queue, clean_queue=False, create_new=False)
                 target_speed = min([
                     self._behavior.max_speed,
                     self._speed_limit - self._behavior.speed_lim_dist])
@@ -342,32 +377,33 @@ class BehaviorAgent(BasicAgent):
         
         if self.overtaking:
             wpt = ego_vehicle_wp
-            #self.lane_change("left", lane_change_time=0.5, other_lane_time=100)
-            def dist(v): return v.get_location().distance(wpt.transform.location)
-            dist = dist(self._obstacle_to_overtake)
             state, actor, _ = self.collision_and_car_avoid_manager(wpt, RoadOption.CHANGELANERIGHT, obstacle_to_overtake=self._obstacle_to_overtake, lane_offset=2)
-            
+            if state:
+                return self.emergency_stop()   
+            """wpt = ego_vehicle_wp
+            #self.lane_change("left", lane_change_time=0.5, other_lane_time=100)
+            #def dist(v): return v.get_location().distance(wpt.transform.location)
+            dist_to_obj = dist(self.overtake_list[-1])
+            state, actor, _ = self.collision_and_car_avoid_manager(wpt, RoadOption.CHANGELANERIGHT, obstacle_to_overtake=self._obstacle_to_overtake, lane_offset=2)
             if self._prev_dist_obstacle is None:
-                self._prev_dist_obstacle = dist
-            elif dist > self._prev_dist_obstacle or state:
-                if dist > self._prev_dist_obstacle:
+                self._prev_dist_obstacle = dist_to_obj
+            elif dist_to_obj > self._prev_dist_obstacle or state:
+                if dist_to_obj > self._prev_dist_obstacle:
                     self._count_dist_obstacle += 1
-                    if self._count_dist_obstacle == 10:
+                    if self._count_dist_obstacle == 1:
                         print("change lane back!!!!!!!!!!")
                         start_location = self._vehicle.get_location()
                         start_waypoint = self._map.get_waypoint(start_location)
                         #plan = self.change_path(start_waypoint, 15, follow_direction=True)
-                        for i in range(35):
-                            self.old_queue.popleft()
                         self._local_planner.set_global_plan(self.old_queue, clean_queue=False, create_new=True)
                         self.overtaking = False
                         self._prev_dist_obstacle = None
                         self._count_dist_obstacle = 0
-                    self._prev_dist_obstacle = dist
+                    self._prev_dist_obstacle = dist_to_obj
                 else:
                     return self.emergency_stop()                  
             else:
-                self._prev_dist_obstacle = dist
+                self._prev_dist_obstacle = dist_to_obj
                 self._count_dist_obstacle = 0
             
             target_speed = min([
@@ -377,7 +413,12 @@ class BehaviorAgent(BasicAgent):
             queue = self.get_local_planner()._waypoints_queue
             wpts = [wpt[0] for wpt in queue]
             draw_waypoints(world=self._world, waypoints=wpts, color=carla.Color(255, 255, 0))
-            
+            """
+            #self.overtaking = False
+            target_speed = min([
+                self._behavior.max_speed,
+                self._speed_limit - self._behavior.speed_lim_dist]) + 10
+            self._local_planner.set_speed(target_speed)
             control = self._local_planner.run_step(debug=debug)
             return control
         
