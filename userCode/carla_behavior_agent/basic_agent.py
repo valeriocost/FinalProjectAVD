@@ -494,7 +494,8 @@ class BasicAgent(object):
                 if is_within_distance(target_rear_transform, ego_front_transform, max_distance, [low_angle_th, up_angle_th]):
                     return (True, target_vehicle, compute_distance(target_transform.location, ego_transform.location))
                 else:
-                    print("Not within distance")
+                    pass
+                    #print("Not within distance")
             # Waypoints aren't reliable, check the proximity of the vehicle to the route
             else:
                 route_bb = []
