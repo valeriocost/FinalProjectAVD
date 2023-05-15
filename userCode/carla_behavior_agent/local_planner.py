@@ -136,6 +136,16 @@ class LocalPlanner(object):
         self.target_waypoint, self.target_road_option = (current_waypoint, RoadOption.LANEFOLLOW)
         self._waypoints_queue.append((self.target_waypoint, self.target_road_option))
 
+    def set_lateral_offset(self, offset):
+        """
+        Changes the lateral offset from the center of the lane
+
+        :param offset: lateral offset in meters
+        :return:
+        """
+        self._offset = offset
+        self._vehicle_controller.set_lateral_offset(offset)
+
     def set_speed(self, speed):
         """
         Changes the target speed

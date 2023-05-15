@@ -103,6 +103,9 @@ class VehicleController():
     
     def setWaypoints(self, waypoints):
         self._lat_controller.setWaypoints(waypoints)
+    
+    def set_lateral_offset(self, offset):
+        self._lat_controller._offset = offset
 
 
 class PIDLongitudinalController():

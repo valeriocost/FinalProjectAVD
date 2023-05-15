@@ -308,6 +308,7 @@ class BehaviorAgent(BasicAgent):
             :param debug: boolean for debugging
             :return control: carla.VehicleControl
         """
+        self._local_planner.set_lateral_offset(2)
         self._update_information()
 
         control = None
@@ -380,41 +381,6 @@ class BehaviorAgent(BasicAgent):
             state, actor, _ = self.collision_and_car_avoid_manager(wpt, RoadOption.CHANGELANERIGHT, obstacle_to_overtake=self._obstacle_to_overtake, lane_offset=2)
             if state:
                 return self.emergency_stop()   
-            """wpt = ego_vehicle_wp
-            #self.lane_change("left", lane_change_time=0.5, other_lane_time=100)
-            #def dist(v): return v.get_location().distance(wpt.transform.location)
-            dist_to_obj = dist(self.overtake_list[-1])
-            state, actor, _ = self.collision_and_car_avoid_manager(wpt, RoadOption.CHANGELANERIGHT, obstacle_to_overtake=self._obstacle_to_overtake, lane_offset=2)
-            if self._prev_dist_obstacle is None:
-                self._prev_dist_obstacle = dist_to_obj
-            elif dist_to_obj > self._prev_dist_obstacle or state:
-                if dist_to_obj > self._prev_dist_obstacle:
-                    self._count_dist_obstacle += 1
-                    if self._count_dist_obstacle == 1:
-                        print("change lane back!!!!!!!!!!")
-                        start_location = self._vehicle.get_location()
-                        start_waypoint = self._map.get_waypoint(start_location)
-                        #plan = self.change_path(start_waypoint, 15, follow_direction=True)
-                        self._local_planner.set_global_plan(self.old_queue, clean_queue=False, create_new=True)
-                        self.overtaking = False
-                        self._prev_dist_obstacle = None
-                        self._count_dist_obstacle = 0
-                    self._prev_dist_obstacle = dist_to_obj
-                else:
-                    return self.emergency_stop()                  
-            else:
-                self._prev_dist_obstacle = dist_to_obj
-                self._count_dist_obstacle = 0
-            
-            target_speed = min([
-                self._behavior.max_speed,
-                self._speed_limit - self._behavior.speed_lim_dist]) + 10
-            self._local_planner.set_speed(target_speed)
-            queue = self.get_local_planner()._waypoints_queue
-            wpts = [wpt[0] for wpt in queue]
-            draw_waypoints(world=self._world, waypoints=wpts, color=carla.Color(255, 255, 0))
-            """
-            #self.overtaking = False
             target_speed = min([
                 self._behavior.max_speed,
                 self._speed_limit - self._behavior.speed_lim_dist]) + 10
