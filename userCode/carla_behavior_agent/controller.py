@@ -50,7 +50,7 @@ class VehicleController():
         self._world = self._vehicle.get_world()
         self.past_steering = self._vehicle.get_control().steer
         self._lon_controller = PIDLongitudinalController(self._vehicle, **args_longitudinal)
-        self._lat_controller = StanleyLateralController(self._vehicle, offset, **args_lateral)
+        self._lat_controller = StanleyLateralController(self._vehicle, **args_lateral)
 
 
     def run_step(self, target_speed, waypoint):
@@ -175,7 +175,7 @@ class StanleyLateralController():
     StanleyLateralController implements lateral control using a Stanley.
     """
 
-    def __init__(self, vehicle, offset=0, lookahead_distance=1.0, K_V=1.0, K_S=0.0, dt=0.03):
+    def __init__(self, vehicle, offset=1, lookahead_distance=1.0, K_V=1.0, K_S=0.0, dt=0.03):
         """
         Constructor method.
 
@@ -246,7 +246,7 @@ class StanleyLateralController():
         ce_idx = self._get_lookahead_index(ego_loc,self._lookahead_distance)
         desired_x = self._wps[ce_idx][0].transform.location.x
         desired_y = self._wps[ce_idx][0].transform.location.y
-        
+            
         # Get Target Heading
         if ce_idx < len(self._wps)-1:
             desired_heading_x = self._wps[ce_idx+1][0].transform.location.x - self._wps[ce_idx][0].transform.location.x
@@ -264,7 +264,7 @@ class StanleyLateralController():
         # Crosstrack error
         lateral_error = \
               ((observed_x-desired_x)*desired_heading_y -
-              (observed_y-desired_y)*desired_heading_x) / (dd + sys.float_info.epsilon)
+              (observed_y-desired_y)*desired_heading_x) / (dd + sys.float_info.epsilon) - self._offset #con offset positivo va a sinistra
         
         # Heading error
         steering = (desired_heading-observed_heading)
