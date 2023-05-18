@@ -431,6 +431,23 @@ class BehaviorAgent(BasicAgent):
         return plan
 
 
+    def check_for_lane_narrowing(self, waypoint):
+        """
+        This module is in charge of checking if the lane is narrowing.
+
+            :param waypoint: current waypoint of the agent
+            :return state: True if the lane is narrowing, False if not
+        """
+        object_list = list(self._world.get_actors().filter("static.prop.constructioncone"))
+        def dist(v): return v.get_location().distance(waypoint.transform.location)
+        object_list = [v for v in object_list if dist(v) < 30]
+        print("OBJECT LIST: ", end="\n")
+        for v in object_list:
+            print(v.type_id, end=", ")
+        print()
+        return len(object_list) > 0
+
+
     def run_step(self, debug=True):
         """
         Execute one step of navigation.
@@ -491,8 +508,6 @@ class BehaviorAgent(BasicAgent):
                 self._obstacle_to_overtake = None
                 self.overtake_list = []
             else:
-                _, angle = is_within_distance_test(self._vehicle.get_transform(), self.overtake_list[-1].get_transform(), 10, [0, 180])
-                print("Angle: " + str(angle))
                 if ego_vehicle_wp.lane_id != self.original_lane:
                     state, actor, _ = self.overtake_manager_old(ego_vehicle_wp, RoadOption.CHANGELANERIGHT, obstacle_to_overtake=self._obstacle_to_overtake, offset=0) #salvare lane di partenza e vedere quando cambia
                 else:
@@ -525,6 +540,26 @@ class BehaviorAgent(BasicAgent):
             if distance < self._behavior.braking_distance:
                 return self.emergency_stop()
 
+        #2.3 Lane narrowing
+        if not self._incoming_waypoint.is_junction:
+            state = self.check_for_lane_narrowing(ego_vehicle_wp)
+
+            if state:
+                print("Lane narrowing")
+                self._local_planner.set_lateral_offset(-1)
+                target_speed = min([
+                    self._behavior.max_speed,
+                    self._speed_limit - self._behavior.speed_lim_dist])
+                self._local_planner.set_speed(target_speed)
+                control = self._local_planner.run_step(debug=debug)
+            else:
+                self._local_planner.set_lateral_offset(0)
+                target_speed = min([
+                    self._behavior.max_speed,
+                    self._speed_limit - self._behavior.speed_lim_dist])
+                self._local_planner.set_speed(target_speed)
+                control = self._local_planner.run_step(debug=debug)
+
         # 2.2: Car following behaviors
         actor_state, actor, distance = self.collision_and_car_avoid_manager(ego_vehicle_wp)
 
@@ -553,7 +588,7 @@ class BehaviorAgent(BasicAgent):
             else:
                 print("Car following")
                 control = self.car_following_manager(actor, distance)
-
+        
         # 3: Intersection behavior
         elif self._incoming_waypoint.is_junction and (self._incoming_direction in [RoadOption.LEFT, RoadOption.RIGHT]):
             print("Intersection with direction", self._incoming_direction)
