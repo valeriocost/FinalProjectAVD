@@ -139,7 +139,7 @@ def is_within_distance_test(target_transform, reference_transform, max_distance,
     forward_vector = np.array([fwd.x, fwd.y])
     angle = math.degrees(math.acos(np.clip(np.dot(forward_vector, target_vector) / norm_target, -1., 1.)))
 
-    return min_angle < angle < max_angle, angle
+    return (min_angle < angle < max_angle, angle)
 
 
 

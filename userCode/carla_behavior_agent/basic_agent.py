@@ -462,20 +462,31 @@ class BasicAgent(object):
 
         
         for target_vehicle in vehicle_list:
-            #print("target_vehicle: ", target_vehicle)
+            if 'police' in target_vehicle.type_id :
+                dist_police = compute_distance(target_vehicle.get_location(), ego_transform.location)
+                if dist_police < max_distance:
+                    print("STOP POLICE")
+                    return (True, target_vehicle, dist_police)
+            
+            print("target_vehicle: ", target_vehicle)
             if obstacle_to_overtake is not None and target_vehicle.type_id == obstacle_to_overtake.type_id:
                 #print("skipped")
                 continue
             target_transform = target_vehicle.get_transform()
             target_wpt = self._map.get_waypoint(target_transform.location, lane_type=carla.LaneType.Any)
+            
+            # Special case for the police vehicle
+            # if target_wpt.lane_type == carla.LaneType.Shoulder:
+            #     print("Shoulder")
+            #     return (True, target_vehicle, compute_distance(target_vehicle.get_location(), ego_transform.location))
 
             # Simplified version for outside junctions
             if not ego_wpt.is_junction or not target_wpt.is_junction:
-
                 if target_wpt.road_id != ego_wpt.road_id or target_wpt.lane_id != ego_wpt.lane_id  + lane_offset:
+
                     wpts = self._local_planner.get_incoming_waypoint_and_direction(steps=15)
                     next_wpt = wpts[0]
-                    #draw_waypoints(self._world, [next_wpt], color=carla.Color(255, 255, 255))
+                    draw_waypoints(self._world, [next_wpt], color=carla.Color(255, 255, 255))
                     if not next_wpt:
                         continue
                     if target_wpt.road_id != next_wpt.road_id or target_wpt.lane_id != next_wpt.lane_id  + lane_offset:
@@ -494,8 +505,8 @@ class BasicAgent(object):
                 if is_within_distance(target_rear_transform, ego_front_transform, max_distance, [low_angle_th, up_angle_th]):
                     return (True, target_vehicle, compute_distance(target_transform.location, ego_transform.location))
                 else:
-                    pass
-                    #print("Not within distance")
+                    print("Not within distance")
+                    #return (False, None, -1)
             # Waypoints aren't reliable, check the proximity of the vehicle to the route
             else:
                 route_bb = []
