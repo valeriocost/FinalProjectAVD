@@ -80,6 +80,7 @@ def is_within_distance(target_transform, reference_transform, max_distance, angl
         target_transform.location.y - reference_transform.location.y
     ])
     norm_target = np.linalg.norm(target_vector)
+    print("norm target: ", norm_target)
 
     # If the vector is too short, we can simply stop here
     if norm_target < 0.001:

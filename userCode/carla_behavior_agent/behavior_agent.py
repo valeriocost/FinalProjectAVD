@@ -143,6 +143,27 @@ class BehaviorAgent(BasicAgent):
                     self.set_destination(end_waypoint.transform.location,
                                          left_wpt.transform.location)
 
+    def collision_and_car_avoid_manager_bb(self, waypoint):
+        bb_list = self._world.get_level_bbs(actor_type=carla.CityObjectLabel.Vehicles)
+        # distance from waypoint to bb
+        def dist(bb): return compute_distance(waypoint.transform.location, bb.location)
+        bb_list = [bb for bb in bb_list if dist(bb) < 45]
+        # sort by distance
+        bb_list = sorted(bb_list, key=dist)
+        print("BEFORE --- BB LIST: ", end="\n")
+        for bb in bb_list:
+            print(bb.type_id, end="- ")
+            print(dist(bb), end=", ")
+        print()
+        # get bb of the vehicles in front of the ego vehicle
+        bb_list = [bb for bb in bb_list if bb.location.x - self._vehicle.get_location().x > 0]
+        print("AFTER --- BB LIST: ", end="\n")
+        for bb in bb_list:
+            print(bb.type_id, end="- ")
+            print(dist(bb), end=", ")
+        print()
+        return False
+
     def collision_and_car_avoid_manager(self, waypoint):
         """
         This module is in charge of warning in case of a collision
@@ -172,15 +193,19 @@ class BehaviorAgent(BasicAgent):
                 # print(wpt.lane_type)
                 # print(dist(v))
                 # print("Angle: ", is_within_distance_test(v.get_transform(), waypoint.transform, 45, [0, 180]))
-            print(v.type_id, end="- ")
-            wpt = self._map.get_waypoint(v.get_location())
-            print("Lane id: ", wpt.lane_id, end="- ")
-            print("Lane type: ", wpt.lane_type, end="- ")
-            print("Distance: ", dist(v), end="- ")
-            print("Angle: ", is_within_distance_test(v.get_transform(), waypoint.transform, 45, [0, 180]))
-            print("Velocity: ", v.get_velocity(), end="- ")
-            print("VERO O FALSO: ", v.get_velocity() == carla.Vector3D(0, 0, 0))
+            else:
+                print(v.type_id, end="- ")
+                wpt = self._map.get_waypoint(v.get_location())
+                print("Lane id: ", wpt.lane_id, end="- ")
+                print("Lane type: ", wpt.lane_type, end="- ")
+                print("Distance: ", dist(v), end="- ")
+                print("Angle: ", is_within_distance_test(v.get_transform(), waypoint.transform, 45, [0, 180]))
+                print("Velocity: ", v.get_velocity(), end="- ")
+                print("VERO O FALSO: ", v.get_velocity() == carla.Vector3D(0, 0, 0))
         print()
+
+        print("Direction: ", self._direction)
+
         if self._direction == RoadOption.CHANGELANELEFT:
             vehicle_state, vehicle, distance = self._vehicle_obstacle_detected(
                 vehicle_list, max(
@@ -210,7 +235,7 @@ class BehaviorAgent(BasicAgent):
         vehicle_list.extend(object_list)
         
         vehicle_list = [v for v in vehicle_list if is_within_distance(v.get_transform(), self._vehicle.get_transform(), 45, [0, 30]) and v.id != self._vehicle.id]
-        vehicle_list = [v for v in vehicle_list if self._map.get_waypoint(v.get_location()).lane_id == waypoint.lane_id]
+        vehicle_list = [v for v in vehicle_list if (self._map.get_waypoint(v.get_location()).lane_id == waypoint.lane_id or self._map.get_waypoint(v.get_location()).lane_id == 2)]
 
         print("BEFORE --- VEHICLE LIST for check overtake: ", end="\n")
         for v in vehicle_list:
@@ -586,7 +611,9 @@ class BehaviorAgent(BasicAgent):
 
         # 2.2: Car following behaviors
         actor_state, actor, distance = self.collision_and_car_avoid_manager(ego_vehicle_wp)
+        # self.collision_and_car_avoid_manager_bb(ego_vehicle_wp)
         print("Collision and car avoid manager: ", actor_state, actor, distance)
+        
         if actor_state:
             # Distance is computed from the center of the two cars,
             # we use bounding boxes to calculate the actual distance
