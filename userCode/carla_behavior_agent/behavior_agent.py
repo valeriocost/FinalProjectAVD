@@ -162,20 +162,29 @@ class BehaviorAgent(BasicAgent):
         vehicle_list = [v for v in vehicle_list if dist(v) < 45 and v.id != self._vehicle.id]
         vehicle_list = sorted(vehicle_list, key=dist)
         print("VEHICLE LIST: ", end="\n")
-        for v in vehicle_list:
-            if v.type_id == "vehicle.dodge.charger_police_2020":
+        for i, v in enumerate(vehicle_list):
+            if 'police' in v.type_id:
+                v.destroy()
+                vehicle_list.pop(i)
                 print("POLICE CAR")
-                wpt = self._map.get_waypoint(v.get_location())
-                print(wpt.lane_id)
-                print(wpt.lane_type)
-                print(dist(v))
-                print("Angle: ", is_within_distance_test(v.get_transform(), waypoint.transform, 45, [0, 180]))
+                # wpt = self._map.get_waypoint(v.get_location())
+                # print(wpt.lane_id)
+                # print(wpt.lane_type)
+                # print(dist(v))
+                # print("Angle: ", is_within_distance_test(v.get_transform(), waypoint.transform, 45, [0, 180]))
             print(v.type_id, end="- ")
+            wpt = self._map.get_waypoint(v.get_location())
+            print("Lane id: ", wpt.lane_id, end="- ")
+            print("Lane type: ", wpt.lane_type, end="- ")
+            print("Distance: ", dist(v), end="- ")
+            print("Angle: ", is_within_distance_test(v.get_transform(), waypoint.transform, 45, [0, 180]))
+            print("Velocity: ", v.get_velocity(), end="- ")
+            print("VERO O FALSO: ", v.get_velocity() == carla.Vector3D(0, 0, 0))
         print()
         if self._direction == RoadOption.CHANGELANELEFT:
             vehicle_state, vehicle, distance = self._vehicle_obstacle_detected(
                 vehicle_list, max(
-                    self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=180, lane_offset=-1)
+                    self._behavior.min_proximity_threshold, self._speed_limi1t / 2), up_angle_th=180, lane_offset=-1)
         elif self._direction == RoadOption.CHANGELANERIGHT:
             vehicle_state, vehicle, distance = self._vehicle_obstacle_detected(
                 vehicle_list, max(
@@ -257,6 +266,8 @@ class BehaviorAgent(BasicAgent):
         #     check, angle = is_within_distance_test(v.get_transform(), left_wpt.transform, 45, [160, 180])
         #     print("IS WITHIN DISTANCE ", check, angle, v.type_id)
         left_wpt = self._map.get_waypoint(self._vehicle.get_location()).get_left_lane()
+        # if left_wpt is None:
+        #     return False, None, None
         vehicle_list = [v for v in vehicle_list if is_within_distance(v.get_transform(), left_wpt.transform, 45, [160, 180]) and v.id != self._vehicle.id]
         print("BEFORE --- VEHICLE LIST inside overtake manager: ", end="\n")
         for v in vehicle_list:
@@ -594,14 +605,16 @@ class BehaviorAgent(BasicAgent):
             #         return self.emergency_stop()
             # else:
             
-            if 'police' in actor.type_id and distance - 1  < 15 and not self.overtaking:
+            if 'police' in actor.type_id and distance - 1  < self._behavior.braking_distance and not self.overtaking:
                 print("FERMA! Ho trovato la macchina della polizia!")
+                print("POLICE VELOCITY: ", actor.get_velocity())
                 self.try_overtake = True
                 self._obstacle_to_overtake = actor
                 return self.emergency_stop()
             
             print("NO POLICE")
-            
+        
+
             if distance - 1  < self._behavior.braking_distance and not self.overtaking and actor.get_velocity() == carla.Vector3D(0, 0, 0):
                 print("FERMA! Ho trovato il traffic warning")
                 self.try_overtake = True
