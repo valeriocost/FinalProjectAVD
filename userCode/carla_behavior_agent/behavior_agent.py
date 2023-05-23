@@ -113,7 +113,7 @@ class BehaviorAgent(BasicAgent):
             :param waypoint: current waypoint of the agent
             :param vehicle_list: list of all the nearby vehicles
         """
-
+        print("TAILGATING")
         left_turn = waypoint.left_lane_marking.lane_change
         right_turn = waypoint.right_lane_marking.lane_change
 
@@ -218,12 +218,13 @@ class BehaviorAgent(BasicAgent):
             vehicle_state, vehicle, distance = self._vehicle_obstacle_detected(
                 vehicle_list, max(
                     self._behavior.min_proximity_threshold, self._speed_limit / 3), up_angle_th=30)
-
+            print("sono uscito da VOD")
             # Check for tailgating
             if not vehicle_state and self._direction == RoadOption.LANEFOLLOW \
                     and not waypoint.is_junction and self._speed > 10 \
                     and self._behavior.tailgate_counter == 0:
-                self._tailgating(waypoint, vehicle_list)
+                if vehicle is not None and vehicle.lane_id != 2:
+                    self._tailgating(waypoint, vehicle_list)
 
         return vehicle_state, vehicle, distance
 
@@ -259,7 +260,8 @@ class BehaviorAgent(BasicAgent):
                     self.overtake_list.append(v)
                 else:
                     break
-        
+        if len(self.overtake_list) == 0:
+            return False
         print("OVERTAKE LIST: ", end="\n")
         for v in self.overtake_list:
             print(v.type_id, end=", ")
@@ -400,6 +402,13 @@ class BehaviorAgent(BasicAgent):
         walker_list = self._world.get_actors().filter("*walker.pedestrian*")
         def dist(w): return w.get_location().distance(waypoint.transform.location)
         walker_list = [w for w in walker_list if dist(w) < 10]
+        print("WALKER LIST: ", end="\n")
+        for w in walker_list:
+            print(w.id, end="- ")
+            print(dist(w), end=", ")
+
+        if len(walker_list) == 0:
+            return False, None, None
 
         if self._direction == RoadOption.CHANGELANELEFT:
             walker_state, walker, distance = self._vehicle_obstacle_detected(walker_list, max(
@@ -488,10 +497,10 @@ class BehaviorAgent(BasicAgent):
         object_list = list(self._world.get_actors().filter("static.prop.constructioncone"))
         def dist(v): return v.get_location().distance(waypoint.transform.location)
         object_list = [v for v in object_list if dist(v) < 30]
-        print("OBJECT LIST: ", end="\n")
-        for v in object_list:
-            print(v.type_id, end=", ")
-        print()
+        # print("OBJECT LIST: ", end="\n")
+        # for v in object_list:
+        #     print(v.type_id, end=", ")
+        # print()
         return len(object_list) > 0
 
 
@@ -573,6 +582,7 @@ class BehaviorAgent(BasicAgent):
 
         # 1: Red lights and stops behavior
         if self.traffic_light_manager():
+            print("Red lights")
             return self.emergency_stop()
 
         # 2.1: Pedestrian avoidance behaviors
@@ -587,10 +597,11 @@ class BehaviorAgent(BasicAgent):
 
             # Emergency brake if the car is very close.
             if distance < self._behavior.braking_distance:
+                print("Emergency stop (pedestrian)")
                 return self.emergency_stop()
 
-        #2.3 Lane narrowing
         if not self._incoming_waypoint.is_junction:
+            #2.3 Lane narrowing
             state = self.check_for_lane_narrowing(ego_vehicle_wp)
 
             if state:
@@ -602,6 +613,7 @@ class BehaviorAgent(BasicAgent):
                 self._local_planner.set_speed(target_speed)
                 control = self._local_planner.run_step(debug=debug)
             else:
+                print("No lane narrowing")
                 self._local_planner.set_lateral_offset(0)
                 target_speed = min([
                     self._behavior.max_speed,
@@ -644,6 +656,9 @@ class BehaviorAgent(BasicAgent):
 
             if distance - 1  < self._behavior.braking_distance and not self.overtaking and actor.get_velocity() == carla.Vector3D(0, 0, 0):
                 print("FERMA! Ho trovato il traffic warning")
+                print(ego_vehicle_wp.is_junction)
+                print(self._incoming_waypoint.is_junction)
+                print(self._world.get_map().get_waypoint(actor.get_location()).is_junction)
                 self.try_overtake = True
                 self._obstacle_to_overtake = actor
                 return self.emergency_stop()
@@ -662,6 +677,7 @@ class BehaviorAgent(BasicAgent):
 
         # 4: Normal behavior
         else:
+            print("Normal behavior")
             target_speed = min([
                 self._behavior.max_speed,
                 self._speed_limit - self._behavior.speed_lim_dist])
