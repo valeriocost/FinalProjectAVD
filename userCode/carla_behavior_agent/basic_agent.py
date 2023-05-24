@@ -482,15 +482,14 @@ class BasicAgent(object):
 
             # Simplified version for outside junctions
             if not ego_wpt.is_junction or not target_wpt.is_junction:
-                print("Road id target: ", target_wpt.road_id)
+                """print("Road id target: ", target_wpt.road_id)
                 print("Road id EGO: ", ego_wpt.road_id)
                 print("target lane: ", target_wpt.lane_id)
                 print("EGO lane: ", ego_wpt.lane_id)
                 print("EGO lane + offset: ", ego_wpt.lane_id + lane_offset)
-                print("velocity: ", target_vehicle.get_velocity())
+                print("velocity: ", target_vehicle.get_velocity())"""
                 if target_wpt.road_id != ego_wpt.road_id or (target_wpt.lane_id != ego_wpt.lane_id  + lane_offset and target_wpt.lane_id != 2):
-                    # if target_vehicle.type_id == "vehicle.mercedes.coupe_2020" and target_vehicle.get_velocity() == carla.Vector3D(0, 0, 0):
-                    #     print("sono entrato")
+
                     wpts = self._local_planner.get_incoming_waypoint_and_direction(steps=15)
                     next_wpt = wpts[0]
                     draw_waypoints(self._world, [next_wpt], color=carla.Color(255, 255, 255))
@@ -508,15 +507,12 @@ class BasicAgent(object):
                     x=target_extent * target_forward_vector.x,
                     y=target_extent * target_forward_vector.y,
                 )
-                if target_vehicle.type_id == "vehicle.mercedes.coupe_2020" and target_vehicle.get_velocity() == carla.Vector3D(0, 0, 0):
-                    print("distance: ", compute_distance(target_transform.location, ego_transform.location), "   max distance: ", max_distance)
-                    print("is_within_distance: ", is_within_distance(target_rear_transform, ego_front_transform, max_distance, [low_angle_th, up_angle_th]))
+                """print("distance: ", compute_distance(target_transform.location, ego_transform.location), "   max distance: ", max_distance)
+                print("is_within_distance: ", is_within_distance(target_rear_transform, ego_front_transform, max_distance, [low_angle_th, up_angle_th]))"""
                 if is_within_distance(target_rear_transform, ego_front_transform, max_distance, [low_angle_th, up_angle_th]):
-                    if target_vehicle.type_id == "vehicle.mercedes.coupe_2020" and target_vehicle.get_velocity() == carla.Vector3D(0, 0, 0):
-                        print("sono entrato")
                     return (True, target_vehicle, compute_distance(target_transform.location, ego_transform.location))
                 else:
-                    print("Not within distance", target_vehicle.type_id)
+                    print("Not within distance")
                     #return (False, None, -1)
             # Waypoints aren't reliable, check the proximity of the vehicle to the route
             else:
