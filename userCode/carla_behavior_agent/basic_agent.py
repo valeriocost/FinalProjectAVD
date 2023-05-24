@@ -468,7 +468,7 @@ class BasicAgent(object):
                     print("STOP POLICE")
                     return (True, target_vehicle, dist_police)
             
-            print("target_vehicle: ", target_vehicle)
+            # print("target_vehicle: ", target_vehicle)
             #if obstacle_to_overtake is not None and target_vehicle.type_id == obstacle_to_overtake.type_id:
                 #print("skipped")
             #    continue
@@ -512,7 +512,8 @@ class BasicAgent(object):
                 if is_within_distance(target_rear_transform, ego_front_transform, max_distance, [low_angle_th, up_angle_th]):
                     return (True, target_vehicle, compute_distance(target_transform.location, ego_transform.location))
                 else:
-                    print("Not within distance")
+                    pass
+                    # print("Not within distance")
                     #return (False, None, -1)
             # Waypoints aren't reliable, check the proximity of the vehicle to the route
             else:
