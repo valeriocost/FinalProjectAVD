@@ -238,30 +238,33 @@ class BasicAgent(object):
         """(De)activates the checks for stop signs"""
         self._ignore_vehicles = active
 
-    def lane_change(self, direction, same_lane_time=0, other_lane_time=0, lane_change_time=2, follow_direction=True):
+    def lane_change(self, direction, heading, same_lane_time=0, other_lane_time=0, lane_change_time=2):
         """
         Changes the path so that the vehicle performs a lane change.
         Use 'direction' to specify either a 'left' or 'right' lane change,
         and the other 3 fine tune the maneuver
         """
         speed = self._vehicle.get_velocity().length()
+        if speed < 3:
+            speed = 3
+            
         path = self._generate_lane_change_path(
             self._map.get_waypoint(self._vehicle.get_location()),
             direction,
+            heading,
             same_lane_time * speed,
             other_lane_time * speed,
             lane_change_time * speed,
             False,
             1,
-            1, #self._sampling_resolution,
-            follow_direction
-            
+            self._sampling_resolution
         )
+        
         if not path:
             print("WARNING: Ignoring the lane change as no path was found")
-        # old_path = self._local_planner._waypoints_queue
-        # path = path + list(old_path)[len(path):]
-        self.set_global_plan(path)
+            return False
+        self.set_global_plan(path, clean_queue=True)
+        return True
 
     def _affected_by_traffic_light(self, lights_list=None, max_distance=None):
         """
@@ -438,8 +441,13 @@ class BasicAgent(object):
         if self._ignore_vehicles:
             return (False, None, -1)
 
+        #===============Eventualmente da togliere
         if not vehicle_list:
             vehicle_list = self._world.get_actors().filter("*vehicle*")
+            
+        #if there are no vehicles in the scene, return false
+        if len(vehicle_list) == 0:
+            return (False, None, -1)
 
         if not max_distance:
             max_distance = self._base_vehicle_threshold
@@ -562,95 +570,82 @@ class BasicAgent(object):
 
         return (False, None, -1)
 
-    def _generate_lane_change_path(self, waypoint, direction='left', distance_same_lane=10,
-                                distance_other_lane=25, lane_change_distance=25,
-                                check=False, lane_changes=1, step_distance=2, follow_direction=True):
+    def _generate_lane_change_path(self, waypoint, direction, heading, distance_same_lane=10,
+                                   distance_other_lane=25, lane_change_distance=25,
+                                   check=True, lane_changes=1, step_distance=1):
         """
         This methods generates a path that results in a lane change.
         Use the different distances to fine-tune the maneuver.
         If the lane change is impossible, the returned path will be empty.
         """
-        distance_same_lane = max(distance_same_lane, 0.1)
-        distance_other_lane = max(distance_other_lane, 0.1)
-        lane_change_distance = max(lane_change_distance, 0.1)
 
         plan = []
         plan.append((waypoint, RoadOption.LANEFOLLOW))  # start position
 
-        option = RoadOption.LANEFOLLOW
-
-        # Same lane
         distance = 0
+
         while distance < distance_same_lane:
-            next_wps = plan[-1][0].next(step_distance)
+            if abs(plan[-1][0].transform.rotation.yaw - heading) > 90 and abs(plan[-1][0].transform.rotation.yaw - heading) < 270:
+                next_wps = plan[-1][0].previous(step_distance)
+            else:
+                next_wps = plan[-1][0].next(step_distance)
             if not next_wps:
-                #return []
-                return plan #[]
+                print("\nLANE CHANGE ERROR 1\n")
+                return []
             next_wp = next_wps[0]
             distance += next_wp.transform.location.distance(plan[-1][0].transform.location)
             plan.append((next_wp, RoadOption.LANEFOLLOW))
 
-        if direction == 'left':
+        if lane_change_distance == 0:
+            return plan
+
+        if direction == "left":
             option = RoadOption.CHANGELANELEFT
-        elif direction == 'right':
+        elif direction == "right":
             option = RoadOption.CHANGELANERIGHT
         else:
-            # ERROR, input value for change must be 'left' or 'right'
             return []
 
         lane_changes_done = 0
         lane_change_distance = lane_change_distance / lane_changes
-        
-        
-
-        # Lane change
         while lane_changes_done < lane_changes:
-
-            # Move forward
-            next_wps = plan[-1][0].next(lane_change_distance)
+            if abs(plan[-1][0].transform.rotation.yaw - heading) > 90 and abs(plan[-1][0].transform.rotation.yaw - heading) < 270:
+                next_wps = plan[-1][0].previous(lane_change_distance)
+            else:
+                next_wps = plan[-1][0].next(lane_change_distance)
             if not next_wps:
-                return plan #[]
+                print("\nLANE CHANGE ERROR 2\n")
+                return []
             next_wp = next_wps[0]
-
-            # Get the side lane
+           
             if direction == 'left':
                 if check and str(next_wp.lane_change) not in ['Left', 'Both']:
-                    # return []
-                    return plan #[]
+                    print("\nLANE CHANGE ERROR 3\n")
+                    return []
                 side_wp = next_wp.get_left_lane()
             else:
                 if check and str(next_wp.lane_change) not in ['Right', 'Both']:
-                    # return []
-                    return plan #[]
-                side_wp = next_wp
-
+                    print("\nLANE CHANGE ERROR 4\n")
+                    return []
+                side_wp = next_wp.get_right_lane()
             if not side_wp or side_wp.lane_type != carla.LaneType.Driving:
-                # return []
-                return plan #[]
-
-            # Update the plan
+                print("\nLANE CHANGE ERROR 5\n")
+                return []
             plan.append((side_wp, option))
             lane_changes_done += 1
-            
-        nextwp = carla.Waypoint()
+
         
-        nextwp.transform.location.x = plan[-1][0].transform.location.x + 4
-        nextwp.transform.location.y = plan[-1][0].transform.location.y 
-        nextwp.transform.location.z = plan[-1][0].transform.location.z 
-        plan.append((nextwp, RoadOption.LANEFOLLOW))
-        # Other lane
-        """distance = 0
+        distance = 0
         while distance < distance_other_lane:
-            #if follow_direction:
-            next_wps = plan[-1][0].previous(step_distance)
-            #else:
-                #next_wps = plan[-1][0].previous(step_distance)
+            if abs(plan[-1][0].transform.rotation.yaw - heading) > 90 and abs(plan[-1][0].transform.rotation.yaw - heading) < 270:
+                next_wps = plan[-1][0].previous(step_distance)
+            else:
+                next_wps = plan[-1][0].next(step_distance)
             if not next_wps:
-                # return []
-                return plan #[]
+                print("\nLANE CHANGE ERROR 6\n")
+                return []
             next_wp = next_wps[0]
             distance += next_wp.transform.location.distance(plan[-1][0].transform.location)
             plan.append((next_wp, RoadOption.LANEFOLLOW))
-        """
-        
+
         return plan

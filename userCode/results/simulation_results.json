@@ -7,10 +7,10 @@
             "infractions": {
                 "collisions_layout": 0.0,
                 "collisions_pedestrian": 0.0,
-                "collisions_vehicle": 0.922,
+                "collisions_vehicle": 2.709,
                 "red_light": 0.0,
                 "stop_infraction": 0.0,
-                "outside_route_lanes": 0.018,
+                "outside_route_lanes": 0,
                 "min_speed_infractions": 0.0,
                 "yield_emergency_vehicles_infractions": 0.0,
                 "scenario_timeouts": 0.0,
@@ -19,9 +19,9 @@
                 "route_timeout": 0.0
             },
             "scores_mean": {
-                "score_composed": 15.211452,
-                "score_route": 25.77,
-                "score_penalty": 0.590278
+                "score_composed": 6.906,
+                "score_route": 11.51,
+                "score_penalty": 0.6
             },
             "scores_std_dev": {
                 "score_composed": "NaN",
@@ -31,7 +31,7 @@
             "meta": {
                 "exceptions": [
                     [
-                        "RouteScenario_0_rep0",
+                        "RouteScenario_1_rep0",
                         0,
                         "Failed"
                     ]
@@ -45,20 +45,18 @@
         "records": [
             {
                 "index": 0,
-                "route_id": "RouteScenario_0_rep0",
+                "route_id": "RouteScenario_1_rep0",
                 "status": "Failed",
-                "num_infractions": 2,
+                "num_infractions": 1,
                 "infractions": {
                     "collisions_layout": [],
                     "collisions_pedestrian": [],
                     "collisions_vehicle": [
-                        "Agent collided against object with type=vehicle.lincoln.mkz_2017 and id=60930 at (x=-3416.587, y=3291.751, z=359.975)"
+                        "Agent collided against object with type=vehicle.chevrolet.impala and id=41608 at (x=-1619.305, y=1610.24, z=324.735)"
                     ],
                     "red_light": [],
                     "stop_infraction": [],
-                    "outside_route_lanes": [
-                        "Agent went outside its route lanes for about 17.585 meters (1.62% of the completed route)"
-                    ],
+                    "outside_route_lanes": [],
                     "min_speed_infractions": [],
                     "yield_emergency_vehicles_infractions": [],
                     "scenario_timeouts": [],
@@ -67,38 +65,31 @@
                     "route_timeout": []
                 },
                 "scores": {
-                    "score_route": 25.77,
-                    "score_penalty": 0.590278,
-                    "score_composed": 15.211452
+                    "score_route": 11.51,
+                    "score_penalty": 0.6,
+                    "score_composed": 6.906
                 },
                 "meta": {
-                    "route_length": 4210.947,
-                    "duration_game": 149.3,
-                    "duration_system": 313.117
+                    "route_length": 3206.913,
+                    "duration_game": 85.2,
+                    "duration_system": 149.878
                 }
             }
         ]
     },
-    "entry_status": "Finished",
-    "eligible": true,
-    "sensors": [
-        "carla_camera",
-        "carla_lidar",
-        "carla_radar",
-        "carla_gnss",
-        "carla_imu",
-        "carla_speedometer"
-    ],
+    "entry_status": "Invalid",
+    "eligible": false,
+    "sensors": [],
     "values": [
-        "15.211452",
-        "25.77",
-        "0.590278",
+        "6.906",
+        "11.51",
+        "0.6",
         "0.0",
-        "0.922",
+        "2.709",
         "0.0",
         "0.0",
         "0.0",
-        "0.018",
+        "0",
         "0.0",
         "0.0",
         "0.0",

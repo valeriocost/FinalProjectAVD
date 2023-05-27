@@ -198,7 +198,7 @@ class LocalPlanner(object):
 
             self._waypoints_queue.append((next_waypoint, road_option))
 
-    def set_global_plan(self, current_plan, stop_waypoint_creation=True, clean_queue=True, create_new = False):
+    def set_global_plan(self, current_plan, stop_waypoint_creation=True, clean_queue=True):
         """
         Adds a new plan to the local planner. A plan must be a list of [carla.Waypoint, RoadOption] pairs
         The 'clean_queue` parameter erases the previous plan if True, otherwise, it adds it to the old one
@@ -214,17 +214,16 @@ class LocalPlanner(object):
 
         # Remake the waypoints queue if the new plan has a higher length than the queue
         new_plan_length = len(current_plan) + len(self._waypoints_queue)
-        if new_plan_length > self._waypoints_queue.maxlen or create_new:
+        if new_plan_length > self._waypoints_queue.maxlen:
             new_waypoint_queue = deque(maxlen=new_plan_length)
-            if(not create_new):
-                for wp in self._waypoints_queue:
-                    new_waypoint_queue.append(wp)
+            for wp in self._waypoints_queue:
+                new_waypoint_queue.append(wp)
             self._waypoints_queue = new_waypoint_queue
             
-        print("è: " + str(len(current_plan)))
+
         for elem in current_plan:
             self._waypoints_queue.append(elem)
-            
+
         self._stop_waypoint_creation = stop_waypoint_creation
         self._vehicle_controller.setWaypoints(self._waypoints_queue)
 
