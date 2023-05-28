@@ -253,51 +253,17 @@ class BehaviorAgent(BasicAgent):
         #     print(v.type_id, end=", ")
         
         # print("DISTANCE by last object: " + str(dist(self.overtake_list[-1])))
-    
-    def overtake_manager_old(self, waypoint, direction=None, distance=45, offset=None, check_lane=False):
-        """
-        This module is in charge of warning in case of a collision
-        and managing possible tailgating chances.
 
-            :param location: current location of the agent
-            :param waypoint: current waypoint of the agent
-            :return vehicle_state: True if there is a vehicle nearby, False if not
-            :return vehicle: nearby vehicle
-            :return distance: distance to nearby vehicle
-        """
-        if direction is None:
-            direction = self._direction
-
+    def _check_vehicles_objects_in_direction(self, waypoint, distance=45, offset=None, angles=(0, 180)):
         vehicle_list = list(self._world.get_actors().filter("*vehicle*"))
         object_list = list(self._world.get_actors().filter("*static*"))
         vehicle_list.extend(object_list)
-        #def dist(v): return v.get_location().distance(waypoint.transform.location)
-        vehicle_list_temp = [v for v in vehicle_list if self._map.get_waypoint(v.get_location()).lane_id == waypoint.lane_id + 2]
-        print("Distanze dalle macchine vicine:\n")
-        for v in vehicle_list_temp:
-            print(v.type_id, '  ----  ', self.dist(v, self._vehicle), '  ----  ', is_within_distance_test(v.get_transform(), waypoint.transform, distance, [0, 180]))
+       
         vehicle_list = [v for v in vehicle_list if self.dist(v, self._vehicle) < distance and v.id != self._vehicle.id]
-        # for v in vehicle_list:
-        #     # get left lane waypoint of the vehicle
-        #     left_wpt = self._map.get_waypoint(self._vehicle.get_location()).get_left_lane()
-        #     check, angle = is_within_distance_test(v.get_transform(), left_wpt.transform, 45, [160, 180])
-        #     print("IS WITHIN DISTANCE ", check, angle, v.type_id)
-        left_wpt = self._map.get_waypoint(self._vehicle.get_location()).get_left_lane()
-        ego_wpt = self._map.get_waypoint(self._vehicle.get_location())
-        # if left_wpt is None:
-        #     return False, None, None
-        if not check_lane:
-            vehicle_list = [v for v in vehicle_list if is_within_distance(v.get_transform(), ego_wpt.transform, distance, [0, 90]) and v.id != self._vehicle.id]
-        else:
-            vehicle_list = [v for v in vehicle_list if is_within_distance(v.get_transform(), ego_wpt.transform, distance, [85, 95]) and v.id != self._vehicle.id]
 
-        print("BEFORE --- VEHICLE LIST inside overtake manager: ", end="\n")
-        for v in vehicle_list:
-            print(v.type_id, end="- ")
-            print(self._map.get_waypoint(v.get_location()).lane_id, end=", ")
-            print("ANGLE INSIDE OVERTAKE MANAGER: ", is_within_distance_test(v.get_transform(), left_wpt.transform, distance, [0, 180]))
-        print()
-        #looking opposite lane (?)
+        ego_wpt = self._map.get_waypoint(self._vehicle.get_location())
+
+        vehicle_list = [v for v in vehicle_list if is_within_distance(v.get_transform(), ego_wpt.transform, distance, angles) and v.id != self._vehicle.id]
         if offset is None:
             if waypoint.lane_id < 0:
                 lane_offset = -(waypoint.lane_id - 1)
@@ -307,23 +273,7 @@ class BehaviorAgent(BasicAgent):
             lane_offset = 0
         
         vehicle_list = [v for v in vehicle_list if self._map.get_waypoint(v.get_location()).lane_id == waypoint.lane_id + lane_offset]
-        print("EGO LANE ID:", waypoint.lane_id)
-        print("AFTER --- VEHICLE LIST after filtering: ", end="\n")
-        for v in vehicle_list:
-            print(v.type_id, end="- ")
-            print(self._map.get_waypoint(v.get_location()).lane_id, end=", ")
-        print()
-        for i, v in enumerate(vehicle_list):
-            if "static.prop.trafficwarning" in v.type_id:
-                continue
-            loc = v.get_location()
-            wp = self._map.get_waypoint(loc)
-            draw_waypoints(self._world, [wp], color=carla.Color(0, 0, 255))
-            # if "static.prop." in v.type_id:
-            #     vehicle_list.pop(i)
-            #     v.destroy()
-        # sort by distance
-        # print("ID + OFFSET " + str(waypoint.lane_id + lane_offset))
+
         vehicle_list = sorted(vehicle_list, key=lambda v: self.dist(v, self._vehicle))
         for v in vehicle_list:
             print(v, end=" ")
@@ -331,32 +281,35 @@ class BehaviorAgent(BasicAgent):
             
         if len(vehicle_list) == 0:
             return False, None, None
-        
-        # if direction == RoadOption.CHANGELANELEFT:
-        #     vehicle_state, vehicle, distance = self._vehicle_obstacle_detected(
-        #         vehicle_list, max(
-        #             self._behavior.min_proximity_threshold, self._speed_limit / 2 ) , up_angle_th=180, lane_offset=-1, obstacle_to_overtake=obstacle_to_overtake)
-        # elif direction == RoadOption.CHANGELANERIGHT:
-        #     vehicle_state, vehicle, distance = self._vehicle_obstacle_detected(
-        #         vehicle_list, max(
-        #             self._behavior.min_proximity_threshold, self._speed_limit / 2), up_angle_th=180, lane_offset=0, obstacle_to_overtake=obstacle_to_overtake)
-        # else:
-        #     print("Vehicle list: ", end=" ")
-        #     for v in vehicle_list:
-        #         print(v.type_id, end=" ")
-        #     print("Distance: ", max(self._behavior.min_proximity_threshold, self._speed_limit / 2))
-        #     vehicle_state, vehicle, distance = self._vehicle_obstacle_detected(
-        #         vehicle_list, max(
-        #             self._behavior.min_proximity_threshold, self._speed_limit / 3), up_angle_th=30, obstacle_to_overtake=obstacle_to_overtake, lane_offset=lane_offset)
-
-        #     # Check for tailgating
-        #     if not vehicle_state and direction == RoadOption.LANEFOLLOW \
-        #             and not waypoint.is_junction and self._speed > 10 \
-        #             and self._behavior.tailgate_counter == 0:
-        #         self._tailgating(waypoint, vehicle_list)
-        # print("STATE " + str(vehicle_state) + " " + str(vehicle))
         else:
             return True, vehicle_list[0], self.dist(vehicle_list[0], self._vehicle)
+    
+    def overtake_manager_old(self, waypoint, distance=45, offset=None):
+        """
+        This module is in charge of warning in case of a collision
+        and managing possible tailgating chances.
+
+            :param waypoint: current waypoint of the agent
+            :param distance: distance to check for vehicles
+            :param offset: offset to check for vehicles
+            :return vehicle_state: True if there is a vehicle nearby, False if not
+            :return vehicle: nearby vehicle
+            :return distance: distance to nearby vehicle
+        """
+        return self._check_vehicles_objects_in_direction(waypoint, distance, offset, (0, 90))
+    
+    def check_beside(self, waypoint, distance=15):
+        """
+        This module is in charge of warning of obstacles beside the vehicle.
+        
+            :param waypoint: current waypoint of the agent
+            :param distance: distance to check for vehicles
+            :return vehicle_state: True if there is a vehicle nearby, False if not
+            :return vehicle: nearby vehicle
+            :return distance: distance to nearby vehicle
+            """
+        return self._check_vehicles_objects_in_direction(waypoint, distance, None, (85, 95))
+        
             
     def pedestrian_avoid_manager(self, waypoint):
         """
@@ -460,28 +413,20 @@ class BehaviorAgent(BasicAgent):
             :param waypoint: current waypoint of the agent
             :return state: True if the lane is narrowing, False if not
         """
-        ########################################AGGIUNGERE CONTROLLO SU LANE ID!!!
         object_list = list(self._world.get_actors().filter("static.prop.constructioncone"))
-        if len(list(self._world.get_actors().filter("static.prop.trafficwarning"))) > 0:
-            object_list = []
+        warning_list = list(self._world.get_actors().filter("static.prop.trafficwarning"))
         bicycle_namelist = ['vehicle.bh.crossbike', 'vehicle.diamondback.century', 'vehicle.gazelle.omafiets']
         bicycle_list = []
         for name in bicycle_namelist:
             bicycle_list.extend(self._world.get_actors().filter(name))      
         def dist(v): return v.get_location().distance(waypoint.transform.location)
-        object_list = [v for v in object_list if dist(v) < 30]
+        object_list = [v for v in object_list if dist(v) < 30 and is_within_distance(v.get_transform(), waypoint.transform, 30, [0, 90])]
+        warning_list = [v for v in warning_list if dist(v) < 30 and is_within_distance(v.get_transform(), waypoint.transform, 30, [0, 90])]
+        if len(warning_list) > 0 or self.overtaking:
+            object_list = []
         bicycle_list = [b for b in bicycle_list if dist(b) < 30]        
         #bicycle_list = [b for b in bicycle_list if dist(b) < 30 and self._map.get_waypoint(b.get_location()).lane_id > 1]
-        print("OBJECT LIST: ", end="\n")
-        for v in object_list:
-            print(v.type_id, end=", ")
-        print()
-        print("BICYCLE LIST: ", end="\n")
-        for b in bicycle_list:
-            print(b.type_id, end=", ")
-            print("Lane id: ", self._map.get_waypoint(b.get_location()).lane_id, end=", ")
-        print()
-        return (object_list, bicycle_list)
+        return (object_list, bicycle_list) #togliere bycicle_list e restituire solo True o False
 
 
     def run_step(self, debug=True):
@@ -611,6 +556,7 @@ class BehaviorAgent(BasicAgent):
             obj_list, bic_list = self.check_for_lane_narrowing(ego_vehicle_wp)
 
             if len(obj_list) > 0:
+                input()
                 #print("Lane narrowing right")
                 self._local_planner.set_lateral_offset(-1.5)
                 self._narrowing = True
@@ -657,7 +603,8 @@ class BehaviorAgent(BasicAgent):
             elif self.overtaking:
                 print("Overtaking...")
                 if not len(self._local_planner._waypoints_queue) > 1:
-                    state, actor, distance = self.overtake_manager_old(ego_vehicle_wp, RoadOption.LANEFOLLOW, distance=75, check_lane=True)
+                    # state, actor, distance = self.overtake_manager_old(ego_vehicle_wp, distance=75, check_lane=True)
+                    state, actor, distance = self.check_beside(ego_vehicle_wp)
                     print("overtake manager inside overtaking: ", state, actor, distance)
                     print("dimensione ego vehicle: ", self._vehicle.bounding_box.extent.x*2)
                     #if not state and not actor in self.overtake_list:
@@ -715,7 +662,7 @@ class BehaviorAgent(BasicAgent):
                     if distance - 1  < self._behavior.braking_distance and not self.overtaking and actor.get_velocity().length() <= 3.0:
                         print("velocità, actor: ", actor.get_velocity().length(), actor.type_id)
                         distance_to_last_obj = self.check_obstacles_to_overtake(ego_vehicle_wp)
-                        state, actor, _ = self.overtake_manager_old(ego_vehicle_wp, RoadOption.LANEFOLLOW, distance=75)
+                        state, actor, _ = self.overtake_manager_old(ego_vehicle_wp, distance=75)
                         if not state:
                             print("change lane")
                             self._waypoints_queue_copy = self._local_planner._waypoints_queue.copy()
