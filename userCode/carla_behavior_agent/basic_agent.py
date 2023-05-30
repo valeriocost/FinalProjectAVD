@@ -468,13 +468,12 @@ class BasicAgent(object):
             y=ego_extent * ego_forward_vector.y,
         )
 
-        print("ITERATION new")
         for target_vehicle in vehicle_list:
-            if 'police' in target_vehicle.type_id :
-                dist_police = compute_distance(target_vehicle.get_location(), ego_transform.location)
-                if dist_police < max_distance:
-                    print("STOP POLICE")
-                    return (True, target_vehicle, dist_police)
+            # if 'police' in target_vehicle.type_id :
+            #     dist_police = compute_distance(target_vehicle.get_location(), ego_transform.location)
+            #     if dist_police < max_distance:
+            #         print("STOP POLICE")
+            #         return (True, target_vehicle, dist_police)
             
             # print("target_vehicle: ", target_vehicle)
             #if obstacle_to_overtake is not None and target_vehicle.type_id == obstacle_to_overtake.type_id:
@@ -490,12 +489,12 @@ class BasicAgent(object):
 
             # Simplified version for outside junctions
             if not ego_wpt.is_junction and not target_wpt.is_junction: #ci vuole AND?
-                print("Road id target: ", target_wpt.road_id)
-                print("Road id EGO: ", ego_wpt.road_id)
-                print("target lane: ", target_wpt.lane_id)
-                print("EGO lane: ", ego_wpt.lane_id)
-                print("EGO lane + offset: ", ego_wpt.lane_id + lane_offset)
-                print("velocity: ", target_vehicle.get_velocity())
+                # print("Road id target: ", target_wpt.road_id)
+                # print("Road id EGO: ", ego_wpt.road_id)
+                # print("target lane: ", target_wpt.lane_id)
+                # print("EGO lane: ", ego_wpt.lane_id)
+                # print("EGO lane + offset: ", ego_wpt.lane_id + lane_offset)
+                # print("velocity: ", target_vehicle.get_velocity())
                 if target_wpt.road_id != ego_wpt.road_id or (target_wpt.lane_id != ego_wpt.lane_id  + lane_offset):
                 # if target_wpt.road_id != ego_wpt.road_id or (target_wpt.lane_id != ego_wpt.lane_id  + lane_offset and target_wpt.lane_id != 2):
 
@@ -516,8 +515,8 @@ class BasicAgent(object):
                     x=target_extent * target_forward_vector.x,
                     y=target_extent * target_forward_vector.y,
                 )
-                print("distance: ", compute_distance(target_transform.location, ego_transform.location), "   max distance: ", max_distance)
-                print("is_within_distance: ", is_within_distance(target_rear_transform, ego_front_transform, max_distance, [low_angle_th, up_angle_th]))
+                # print("distance: ", compute_distance(target_transform.location, ego_transform.location), "   max distance: ", max_distance)
+                # print("is_within_distance: ", is_within_distance(target_rear_transform, ego_front_transform, max_distance, [low_angle_th, up_angle_th]))
                 if is_within_distance(target_rear_transform, ego_front_transform, max_distance, [low_angle_th, up_angle_th]):
                     return (True, target_vehicle, compute_distance(target_transform.location, ego_transform.location))
                 else:

@@ -68,6 +68,9 @@ class BehaviorAgent(BasicAgent):
         self._count_dist_obstacle = 0
         self.original_lane = None
         self._narrowing = False
+        self._stop_counter = 0
+        self.wait_at_stop = False
+        self._stop_managed = None
 
         # Parameters for agent behavior
         if behavior == 'cautious':
@@ -229,7 +232,7 @@ class BehaviorAgent(BasicAgent):
             else:
                 distance = v.get_location().distance(prec_location)
                 prec_location = v.get_location()
-                print("DISTANCE between {} and {}: {}".format(self.overtake_list[-1].type_id, v.type_id, str(distance)))
+                # print("DISTANCE between {} and {}: {}".format(self.overtake_list[-1].type_id, v.type_id, str(distance)))
                 if distance < 15:
                     self.overtake_list.append(v)
                 else:
@@ -273,9 +276,9 @@ class BehaviorAgent(BasicAgent):
             vehicle_list = [v for v in vehicle_list if self._map.get_waypoint(v.get_location()).lane_id == waypoint.lane_id + lane_offset]
 
         vehicle_list = sorted(vehicle_list, key=lambda v: self.dist(v, self._vehicle))
-        for v in vehicle_list:
-            print(v, end=" ")
-            print(self._map.get_waypoint(v.get_location()).lane_id)
+        # for v in vehicle_list:
+        #     print(v, end=" ")
+        #     print(self._map.get_waypoint(v.get_location()).lane_id)
             
         if len(vehicle_list) == 0:
             return False, None, None
@@ -432,6 +435,21 @@ class BehaviorAgent(BasicAgent):
             object_list = []
         return len(object_list) > 0
 
+    def check_for_stop_sign(self, waypoint):
+        """
+        This module is in charge of checking if there's a stop sign.
+        
+            :param waypoint: current waypoint of the agent
+            :return state: True if there's a stop sign, False if not
+        """
+        object_list = list(self._world.get_actors().filter("*stop"))
+        def dist(v): return v.get_location().distance(waypoint.transform.location)
+        object_list = sorted(object_list, key=dist)
+        object_list = [v for v in object_list if dist(v) < 20 and is_within_distance(v.get_transform(), waypoint.transform, 20, [0, 45])]
+        print("EGO WAYPOINT IS JUNCTION: ", waypoint.is_junction)
+        print("INCOMING WAYPOINT IS JUNCTION: ", self._incoming_waypoint.is_junction)
+        return (len(object_list) > 0, object_list[0] if len(object_list) > 0 else None)
+
 
     def run_step(self, debug=True):
         """
@@ -449,7 +467,25 @@ class BehaviorAgent(BasicAgent):
         
         ego_vehicle_loc = self._vehicle.get_location()
         ego_vehicle_wp = self._map.get_waypoint(ego_vehicle_loc)        
-    
+
+        stop_state, stop_sign = self.check_for_stop_sign(ego_vehicle_wp)
+        if stop_state and not self.wait_at_stop and stop_sign.id != self._stop_managed:
+            print("STOP SIGN")
+            self._stop_counter = 20
+            self.wait_at_stop = True
+
+        if self.wait_at_stop and self._stop_counter > 0:
+            print("STOP COUNTER", self._stop_counter)
+            self._stop_counter -= 1
+            return self.emergency_stop()
+        else:
+            self._stop_managed = stop_sign.id if stop_sign is not None else None
+            print("STOP SIGN PASSED", self._stop_managed)
+            self.wait_at_stop = False
+            
+            
+            #return self.emergency_stop()
+
         # 1: Red lights and stops behavior
         if self.traffic_light_manager():
             return self.emergency_stop()
@@ -476,6 +512,7 @@ class BehaviorAgent(BasicAgent):
         
         #2.3 Lane narrowing
         if not self._incoming_waypoint.is_junction and not ego_vehicle_wp.is_junction:
+            
             narrowing_state = self.check_for_lane_narrowing(ego_vehicle_wp)
 
             if narrowing_state:
@@ -497,7 +534,7 @@ class BehaviorAgent(BasicAgent):
                 
 
             if self._ending_overtake:
-                print("sto terminando sorpasso")
+                # print("sto terminando sorpasso")
                 if not len(self._local_planner._waypoints_queue) > 1:
                     self._ending_overtake = False
                     self.overtaking = False
@@ -506,7 +543,7 @@ class BehaviorAgent(BasicAgent):
                     for i in range ((self._global_planner._find_closest_in_list(ego_vehicle_wp, route_trace_p) ,self._direction)[0], len(self._waypoints_queue_copy)):
                         route_trace.append(self._waypoints_queue_copy[i])
                     self._local_planner.set_global_plan(route_trace, True)
-                    print(f"SORPASSO TERMINATO, deque len: {len(self._local_planner._waypoints_queue)}")
+                    # print(f"SORPASSO TERMINATO, deque len: {len(self._local_planner._waypoints_queue)}")
                 target_speed = min([self._behavior.max_speed, self._speed_limit])
                 self._local_planner.set_speed(target_speed)
                 control = self._local_planner.run_step(debug=debug)
@@ -518,13 +555,13 @@ class BehaviorAgent(BasicAgent):
                     state, actor, distance = self.check_beside(ego_vehicle_wp)
                     if ego_vehicle_wp.lane_id != self.original_lane:
                         state_front, actor_front, distance_front = self.check_front_overtaking(ego_vehicle_wp)
-                    print("overtake manager inside overtaking: ", state, actor, distance)
-                    print("dimensione ego vehicle: ", self._vehicle.bounding_box.extent.x*2)
+                    # print("overtake manager inside overtaking: ", state, actor, distance)
+                    # print("dimensione ego vehicle: ", self._vehicle.bounding_box.extent.x*2)
                     #if not state and not actor in self.overtake_list:
                     if (actor is not None and actor.id == self.overtake_list[-1].id) or state_front:
-                        print("overtake finished")
-                        if self.lane_change("left", self._vehicle_heading, 0, 1.50, 0.6):
-                            print("FACCIO IL RIENTRO AGGRESSIVO")
+                        # print("overtake finished")
+                        if self.lane_change("left", self._vehicle_heading, 0, 1.50, 0.1):
+                            # print("FACCIO IL RIENTRO AGGRESSIVO")
                             self._ending_overtake = True
                     else:
                         self.lane_change("left", self._vehicle_heading, 0.85, 0, 0)
@@ -551,14 +588,14 @@ class BehaviorAgent(BasicAgent):
             
                 if not self._narrowing and not ego_vehicle_wp.is_junction:
                     if distance - 1  < self._behavior.braking_distance and not self.overtaking and actor.get_velocity().length() < 3.0:
-                        print("velocità, actor: ", actor.get_velocity().length(), actor.type_id)
+                        # print("velocità, actor: ", actor.get_velocity().length(), actor.type_id)
                         distance_to_last_obj = self.check_obstacles_to_overtake(ego_vehicle_wp)
                         if len(self.overtake_list) <= 2:
                             state, actor, _ = self.overtake_manager_old(ego_vehicle_wp, distance=65)
                         else:
                             state, actor, _ = self.overtake_manager_old(ego_vehicle_wp, distance=max(80, distance_to_last_obj*3))
                         if not state:
-                            print("change lane")
+                            # print("change lane")
                             self._waypoints_queue_copy = self._local_planner._waypoints_queue.copy()
                             if self.lane_change("left", self._vehicle_heading, 0, 2, 1.5):
                                 self.overtaking = True
@@ -569,7 +606,7 @@ class BehaviorAgent(BasicAgent):
                                 return control
                         return self.emergency_stop()
                     else:
-                        print("Car following", actor)
+                        # print("Car following", actor)
                         control = self.car_following_manager(actor, distance)
 
         
