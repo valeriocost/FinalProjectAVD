@@ -500,7 +500,7 @@ class BasicAgent(object):
 
                     wpts = self._local_planner.get_incoming_waypoint_and_direction(steps=15)
                     next_wpt = wpts[0]
-                    draw_waypoints(self._world, [next_wpt], color=carla.Color(255, 255, 255))
+                    # draw_waypoints(self._world, [next_wpt], color=carla.Color(255, 255, 255))
                     if not next_wpt:
                         continue
                     if target_wpt.road_id != next_wpt.road_id or target_wpt.lane_id != next_wpt.lane_id  + lane_offset:

@@ -71,8 +71,6 @@ class MyTeamAgent(AutonomousAgent):
         """
         Set the plan (route) for the agent
         """
-        print("GLOBAL PLAN")
-        print(global_plan_world_coord)
         self._global_plan_world_coord = global_plan_world_coord
         self._global_plan = global_plan_gps
 
