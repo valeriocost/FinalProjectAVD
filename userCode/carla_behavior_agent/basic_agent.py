@@ -488,7 +488,7 @@ class BasicAgent(object):
             #     return (True, target_vehicle, compute_distance(target_vehicle.get_location(), ego_transform.location))
 
             # Simplified version for outside junctions
-            if not ego_wpt.is_junction and not target_wpt.is_junction: #ci vuole AND?
+            if not ego_wpt.is_junction and not target_wpt.is_junction:
                 # print("Road id target: ", target_wpt.road_id)
                 # print("Road id EGO: ", ego_wpt.road_id)
                 # print("target lane: ", target_wpt.lane_id)
