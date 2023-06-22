@@ -469,24 +469,10 @@ class BasicAgent(object):
         )
 
         for target_vehicle in vehicle_list:
-            # if 'police' in target_vehicle.type_id :
-            #     dist_police = compute_distance(target_vehicle.get_location(), ego_transform.location)
-            #     if dist_police < max_distance:
-            #         print("STOP POLICE")
-            #         return (True, target_vehicle, dist_police)
             
-            # print("target_vehicle: ", target_vehicle)
-            #if obstacle_to_overtake is not None and target_vehicle.type_id == obstacle_to_overtake.type_id:
-                #print("skipped")
-            #    continue
             target_transform = target_vehicle.get_transform()
             target_wpt = self._map.get_waypoint(target_transform.location, lane_type=carla.LaneType.Any)
             
-            # Special case for the police vehicle
-            # if target_wpt.lane_type == carla.LaneType.Shoulder:
-            #     print("Shoulder")
-            #     return (True, target_vehicle, compute_distance(target_vehicle.get_location(), ego_transform.location))
-
             # Simplified version for outside junctions
             if not ego_wpt.is_junction and not target_wpt.is_junction:
                 # print("Road id target: ", target_wpt.road_id)
@@ -525,6 +511,7 @@ class BasicAgent(object):
                     #return (False, None, -1)
             # Waypoints aren't reliable, check the proximity of the vehicle to the route
             else:
+                print("sono qui")
                 route_bb = []
                 ego_location = ego_transform.location
                 extent_y = self._vehicle.bounding_box.extent.y
