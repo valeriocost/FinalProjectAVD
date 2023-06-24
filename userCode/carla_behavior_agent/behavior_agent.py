@@ -401,13 +401,15 @@ class BehaviorAgent(BasicAgent):
         # return state_right, actor_right, dist_right
         return vehicle_list
 
-    def detect_lane_obstacle(self, actor, extension_factor=3.2, extension_factor_adv=2.2, margin=1.02):
+    #def detect_lane_obstacle(self, actor, extension_factor=2.7, extension_factor_adv=2.7, margin=1.02):
+    def detect_lane_obstacle(self, actor, margin=1.02):
         """
         This function identifies if an obstacle is present in front of the reference actor
         """
         world = CarlaDataProvider.get_world()
         world_actors = world.get_actors().filter('vehicle.*')
         world_actors = [world_actor for world_actor in world_actors if get_speed(world_actor) > 0.1]
+        extension_factor = int((self._speed) / 10) + 1
         actor_bbox = actor.bounding_box
         actor_transform = actor.get_transform()
         actor_location = actor_transform.location
@@ -420,6 +422,7 @@ class BehaviorAgent(BasicAgent):
 
         is_hazard = False
         for adversary in world_actors:
+            extension_factor_adv = int((get_speed(adversary)) / 10) + 1
             print("velocità actor: ", get_speed(adversary))
             if adversary.id != actor.id and \
                     actor_transform.location.distance(adversary.get_location()) < 50:
