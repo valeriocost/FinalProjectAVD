@@ -441,7 +441,6 @@ class BasicAgent(object):
         if self._ignore_vehicles:
             return (False, None, -1)
 
-        #===============Eventualmente da togliere
         if not vehicle_list:
             vehicle_list = self._world.get_actors().filter("*vehicle*")
             
@@ -475,23 +474,13 @@ class BasicAgent(object):
             
             # Simplified version for outside junctions
             if not ego_wpt.is_junction and not target_wpt.is_junction:
-                # print("Road id target: ", target_wpt.road_id)
-                # print("Road id EGO: ", ego_wpt.road_id)
-                # print("target lane: ", target_wpt.lane_id)
-                # print("EGO lane: ", ego_wpt.lane_id)
-                # print("EGO lane + offset: ", ego_wpt.lane_id + lane_offset)
-                # print("velocity: ", target_vehicle.get_velocity())
                 if target_wpt.road_id != ego_wpt.road_id or (target_wpt.lane_id != ego_wpt.lane_id  + lane_offset):
-                # if target_wpt.road_id != ego_wpt.road_id or (target_wpt.lane_id != ego_wpt.lane_id  + lane_offset and target_wpt.lane_id != 2):
 
                     wpts = self._local_planner.get_incoming_waypoint_and_direction(steps=15)
                     next_wpt = wpts[0]
-                    # draw_waypoints(self._world, [next_wpt], color=carla.Color(255, 255, 255))
                     if not next_wpt:
                         continue
                     if target_wpt.road_id != next_wpt.road_id or target_wpt.lane_id != next_wpt.lane_id  + lane_offset:
-                        #print("Target waypoint road id: ", target_wpt.road_id, "Target waypoint lane id: ", target_wpt.lane_id)
-                        #print("Next waypoint road id: ", next_wpt.road_id, "Next waypoint lane id: ", next_wpt.lane_id)
                         continue
 
                 target_forward_vector = target_transform.get_forward_vector()
@@ -501,17 +490,10 @@ class BasicAgent(object):
                     x=target_extent * target_forward_vector.x,
                     y=target_extent * target_forward_vector.y,
                 )
-                # print("distance: ", compute_distance(target_transform.location, ego_transform.location), "   max distance: ", max_distance)
-                # print("is_within_distance: ", is_within_distance(target_rear_transform, ego_front_transform, max_distance, [low_angle_th, up_angle_th]))
                 if is_within_distance(target_rear_transform, ego_front_transform, max_distance, [low_angle_th, up_angle_th]):
                     return (True, target_vehicle, compute_distance(target_transform.location, ego_transform.location))
-                else:
-                    pass
-                    # print("Not within distance")
-                    #return (False, None, -1)
             # Waypoints aren't reliable, check the proximity of the vehicle to the route
             else:
-                print("sono qui")
                 route_bb = []
                 ego_location = ego_transform.location
                 extent_y = self._vehicle.bounding_box.extent.y
