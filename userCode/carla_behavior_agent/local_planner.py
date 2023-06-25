@@ -248,9 +248,7 @@ class LocalPlanner(object):
         self._min_distance = self._base_min_distance + self._distance_ratio * vehicle_speed
 
         num_waypoint_removed = 0
-        
-        print(len(self._waypoints_queue))
-        
+                
         for waypoint, _ in self._waypoints_queue:
 
             if len(self._waypoints_queue) - num_waypoint_removed == 1:
@@ -280,7 +278,7 @@ class LocalPlanner(object):
             control = self._vehicle_controller.run_step(self._target_speed, self.target_waypoint)
 
         if debug:
-            draw_waypoints(self._vehicle.get_world(), [self.target_waypoint], 1.0)
+            #draw_waypoints(self._vehicle.get_world(), [self.target_waypoint], 1.0)
             pass
         return control
 

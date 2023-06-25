@@ -1,5 +1,4 @@
 <routes>
-</route>
    <route id="2" town="Town12">
       <!-- Urban route focused on high density areas with obstacle -->
       <weathers>

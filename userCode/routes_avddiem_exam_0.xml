@@ -13,7 +13,9 @@
          <position x="-3279.6" y="3071.6" z="359.4"/>
          <position x="-3405.0" y="3384.7" z="361.7"/>
          <position x="-3693.8" y="4000.2" z="358.2"/>
-         <!-- <position x="-3752.6" y="3951.2" z="356.8"/>  macchina parcheggiata-->
+         <!-- <position x="-3354.0" y="4171.9" z="364.4"/>  -->
+         <!-- <position x="-3223.5" y="4141.9" z="365.0"/> -->
+         <!-- <position x="-3395.5" y="4027.7" z="364.4"/> -->
          <position x="-3118.6" y="4075.9" z="362.6"/>
          <position x="-3050.3" y="3634.7" z="354.8"/> 
       </waypoints>
@@ -201,11 +203,6 @@
          <scenario name="DynamicObjectCrossing_4" type="DynamicObjectCrossing">
             <trigger_point x="-2801.1" y="2818.8" z="349.4" yaw="102.5"/>
             <distance value="50"/>
-            <blocker_model value="vehicle.audi.tt"/>
-            <crossing_angle value="10"/>
-         </scenario>
-         <scenario name="ControlLoss_5" type="ControlLoss">
-            <trigger_point x="-2832.3" y="2955.3" z="351.3" yaw="106.3"/>
          </scenario>
          <scenario name="HardBreakRoute_6" type="HardBreakRoute">
             <trigger_point x="-2843.5" y="2988.1" z="351.7" yaw="111.5"/>

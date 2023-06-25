@@ -1,6 +1,7 @@
 <routes>
-   <route id="8" town="Town12">
-      <!-- Interurban route focused on route obstacles and interurban intersections -->
+<!-- Interurban route focused on route obstacles and interurban intersections -->
+   <!--<route id="8" town="Town12">
+      
       <weathers>
          <weather route_percentage="0"
             cloudiness="5.0" precipitation="0.0" precipitation_deposits="0.0" wetness="0.0"
@@ -218,7 +219,7 @@
             <frequency from="60" to="140"/>
          </scenario>
       </scenarios>
-   </route>
+   </route>-->
    <route id="9" town="Town12">
       <!-- Urban route focused on low density areas with signalized junctions -->
       <weathers>
