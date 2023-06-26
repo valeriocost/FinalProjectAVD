@@ -661,7 +661,7 @@ class BehaviorAgent(BasicAgent):
                 target_speed = max([self._behavior.max_speed, self._speed_limit]) + 10
                 return self.apply_speed(speed=target_speed)
             
-            # 4.5: Car following behavior
+            # 4.4: Car following behavior
             actor_state, actor, distance = self.collision_and_car_avoid_manager(ego_vehicle_wp)            
             
             if actor_state:
@@ -670,7 +670,8 @@ class BehaviorAgent(BasicAgent):
                 distance = distance - max(
                     actor.bounding_box.extent.y, actor.bounding_box.extent.x) - max(
                         self._vehicle.bounding_box.extent.y, self._vehicle.bounding_box.extent.x)
-                # 4.5.1: Start overtaking behavior
+                    
+                # 4.4.1: Start overtaking behavior
                 if not self._narrowing:
                     ego_forward_vector = self.get_forward_vector(self._vehicle)
                     actor_forward_vector = self.get_forward_vector(actor)
@@ -716,9 +717,8 @@ class BehaviorAgent(BasicAgent):
             else:
                 return self.apply_speed(speed=50)
             
-        # 5.1: Intersection behavior with LANEFOLLOW RoadOption
+        # 5.1: Intersection behavior with STAIGHT RoadOption
         else:
-            #print ("LANE FOLLOWING")
             actor_state, actor, distance = self.collision_and_car_avoid_manager(ego_vehicle_wp)
             if actor_state:
                 if distance < self._behavior.braking_distance:
